@@ -176,7 +176,7 @@ static bool MenDeal = true;
     // ตัวแปรฟังก์ชันเดิม
     // ----------------------------------------------------
     static bool espEnabled = false;
-    static bool overlayEnabled = true;
+    static bool overlayEnabled = false;
     static bool show_s0_active = false;
     
     // ----------------------------------------------------
@@ -251,6 +251,10 @@ ImGui::Checkbox("Monster Not Attack", &demo_checkbox3);
             ImGui::SliderFloat("Fly Speed", &demo_slider_float2, 1.0f, 7.0f, "%.1f");
             ImGui::SliderInt("Max Distance", &demo_slider_int1, 0, 500);
             ImGui::SliderInt("Line Thickness", &demo_slider_int2, 1, 10);*/
+
+ImGui::Separator();
+
+ImGui::Text("Expiry date: 23-07-2026 19:32:20 (2647128139");
 
             // [ลบปุ่ม Hide Menu เดิมออกเรียบร้อยแล้ว]
 
