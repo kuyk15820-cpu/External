@@ -875,7 +875,8 @@ static void DumpThreads(void)
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
-    return UIInterfaceOrientationMaskAll;
+    // Force HUD to operate in landscape only (match HUDimgui behavior).
+    return UIInterfaceOrientationMaskLandscape;
 }
 
 - (BOOL)shouldAutorotate
@@ -994,7 +995,7 @@ static void DumpThreads(void)
     return [[[NSDictionary dictionaryWithContentsOfFile:USER_DEFAULTS_PATH] objectForKey:@"passthroughMode"] boolValue];
 }
 
-- (void)setESPEnabled:(BOOL)enabled
+/*- (void)setESPEnabled:(BOOL)enabled
 {
     if (_fakeESPLayer) {
         _fakeESPLayer.hidden = !enabled;
@@ -1006,7 +1007,16 @@ static void DumpThreads(void)
             [self.view layoutIfNeeded];
         }
     }
+}*/
+
+- (void)setESPEnabled:(BOOL)enabled
+{
+    if (_fakeESPLayer) {
+        _fakeESPLayer.hidden = YES; // บังคับซ่อนตลอดเวลา
+        _fakeESPLayer.path = nil;   // เคลียร์เส้นทิ้ง
+    }
 }
+
 
 - (void)hideMenuFromImGui
 {
@@ -1166,16 +1176,33 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
 
 
 - (void)updateOrientation:(UIInterfaceOrientation)orientation animateWithDuration:(NSTimeInterval)duration {
-    // ปล่อยให้เปลี่ยนไปตามค่าที่ระบบส่งมาจริง ไม่ต้องบังคับเป็น LandscapeRight
-    if (orientation == _orientation)
+    // Always treat the HUD as landscape: if the system reports a
+    // portrait orientation, normalize it to LandscapeRight so that
+    // our HUD content and ImGui menu are laid out on a horizontal canvas.
+    UIInterfaceOrientation appliedOrientation;
+    if (UIInterfaceOrientationIsLandscape(orientation)) {
+        appliedOrientation = orientation;
+    } else {
+        appliedOrientation = UIInterfaceOrientationLandscapeRight;
+    }
+
+    if (appliedOrientation == _orientation)
         return;
 
-    _orientation = orientation;
+    _orientation = appliedOrientation;
 
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    // ปล่อยให้ฟังก์ชันคำนวณสลับ Width/Height ตามทิศทางจริง
-    CGRect orientedBounds = orientationBounds(orientation, screenBounds);
+    CGRect orientedBounds = orientationBounds(appliedOrientation, screenBounds);
 
+    NSLog(@"andrdevv [HUDRootViewController updateOrientation] reported=%ld applied=%ld screenBounds=%@ orientedBounds=%@",
+          (long)orientation,
+          (long)appliedOrientation,
+          NSStringFromCGRect(screenBounds),
+          NSStringFromCGRect(orientedBounds));
+
+    // Expand the HUD window itself to match the oriented bounds so that
+    // hit-testing covers the full visible area (avoids a portrait-shaped
+    // hitbox with a rotated landscape view inside).
     UIWindow *window = self.view.window;
     if (window) {
         window.frame = orientedBounds;
@@ -1184,13 +1211,13 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     self.view.bounds = orientedBounds;
     _contentView.bounds = orientedBounds;
 
-    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(orientation));
+    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(appliedOrientation));
 
     [UIView animateWithDuration:duration animations:^{
         self->_contentView.transform = transform;
     }];
-}
 
+}
 
 
 
@@ -1270,12 +1297,12 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
 
     // Fullscreen ESP debug overlay drawn via CAShapeLayer so it does not
     // interfere with hit-testing (no extra UIView).
-    _fakeESPLayer = [CAShapeLayer layer];
+    /*_fakeESPLayer = [CAShapeLayer layer];
     _fakeESPLayer.frame = self.view.bounds;
     _fakeESPLayer.fillColor = [UIColor clearColor].CGColor;
     _fakeESPLayer.strokeColor = [UIColor colorWithRed:0.0f green:1.0f blue:0.0f alpha:1.0f].CGColor;
     _fakeESPLayer.lineWidth = 2.0;
-    [self.view.layer insertSublayer:_fakeESPLayer below:menuView.layer];
+    [self.view.layer insertSublayer:_fakeESPLayer below:menuView.layer];*/
 
     // Draggable launcher button to show the menu when it is hidden.
     _menuToggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -1299,7 +1326,7 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     [self reloadUserDefaults];
 }
 
-- (void)viewDidLayoutSubviews
+/*- (void)viewDidLayoutSubviews
 {
     [super viewDidLayoutSubviews];
     
@@ -1342,7 +1369,18 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
           NSStringFromCGRect(_contentView.frame),
           NSStringFromCGRect(_blurView.frame),
           NSStringFromCGRect(menuView.frame));
+}*/
+
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    
+    // สั่งล้าง Path ออกทั้งหมด ไม่ต้องวาดอะไรเลย
+    if (_fakeESPLayer) {
+        _fakeESPLayer.path = nil;
+    }
 }
+
 
 
 - (void)resetLoopTimer
