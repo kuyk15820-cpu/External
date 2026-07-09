@@ -254,7 +254,7 @@ ImGui::Checkbox("Monster Not Attack", &demo_checkbox3);
 
 ImGui::Separator();
 
-ImGui::Text("Expiry date: 23-07-2026 19:32:20 (2647128139");
+ImGui::Text("Expiry date: 23-07-2026 19:32:20 (2647128139)");
 
             // [ลบปุ่ม Hide Menu เดิมออกเรียบร้อยแล้ว]
 
