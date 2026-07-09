@@ -26,7 +26,6 @@
         UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:panGesture];
 
-        // เรียกจัดเมนูให้อยู่กึ่งกลางครั้งแรกตอนสร้าง
         [self centerMenu];
     }
     return self;
@@ -70,8 +69,8 @@
 
         newCenter.y = MAX(halfH, MIN(newCenter.y, hostSize.height - halfH));
 
-        // ปรับขอบเขตการลากให้เหมาะสมกับความกว้างหน้าจอปัจจุบัน
-        CGFloat maxX = hostSize.width; 
+
+        CGFloat maxX = hostSize.width * 0.5f;
         if (maxX < halfW) {
             maxX = halfW;
         }
@@ -82,26 +81,15 @@
     }
 }
 
-// จุดที่ 1: อัปเดตขนาดวิว ImGui และสั่งจัดตำแหน่งเมื่อมีการหมุนจอ
 - (void)layoutSubviews
 {
     [super layoutSubviews];
     self.imguiController.view.frame = self.bounds;
-    [self centerMenu];
 }
 
-// จุดที่ 2: เขียนตรรกะการคำนวณหาจุดกึ่งกลางจอจริง (ดึงจากขนาดหน้าต่างแม่ หรือ หน้าจอหลัก)
 - (void)centerMenu
 {
-    // ดึงขนาดขอบเขตหน้าจอหลัก ณ วินาทีนั้น ๆ (จะสลับสัดส่วน W/H ตามแนวตั้ง-นอนให้เองอัตโนมัติ)
-    CGRect screenBounds = [UIScreen mainScreen].bounds;
-    
-    // หาก MenuView ถูกใส่เข้าไปในเป้าหมายที่มีมุมมองจำกัด ให้ใช้ขนาดของ superview แทน (ถ้ามี)
-    if (self.superview) {
-        screenBounds = self.superview.bounds;
-    }
-    
-    self.center = CGPointMake(screenBounds.size.width / 2.0f, screenBounds.size.height / 2.0f);
+
 }
 
 @end
