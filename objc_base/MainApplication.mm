@@ -161,14 +161,14 @@ static NSString * const kToggleHUDAfterLaunchNotificationActionToggleOff = @"tog
     CGFloat labelFontSize = 32.0f;
     CGFloat versionFontSize = 14.0f;
 
-    UIImageView *appIconImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon.png"]];
+    UIImageView *appIconImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Icon.png"]];
     appIconImageView.contentMode = UIViewContentModeScaleAspectFill;
     appIconImageView.layer.cornerRadius = 25;
     appIconImageView.clipsToBounds = YES;
     [self.backgroundView addSubview:appIconImageView];
 
     UILabel *appNameLabel = [[UILabel alloc] init];
-    appNameLabel.text = @"Excalibur";
+    appNameLabel.text = @"F1X3R";
     appNameLabel.font = [UIFont fontWithName:@"HelveticaNeue" size:labelFontSize];
     appNameLabel.textColor = [UIColor whiteColor];
     appNameLabel.font = [UIFont boldSystemFontOfSize:labelFontSize];
