@@ -28,11 +28,14 @@ F1X3R_CCFLAGS += -DNOTIFY_RELOAD_APP=\"ch.xxtou.notification.app.reload\"
 F1X3R_CCFLAGS += -std=c++17
 MainApplication.mm_CCFLAGS += -std=c++14
 
+# ใช้เฉพาะ Framework มาตรฐานที่มีใน SDK ทุกตัวแน่นอน
 F1X3R_FRAMEWORKS += CoreGraphics QuartzCore UIKit Foundation Metal MetalKit
 
-# ย้ายสองตัวที่มีปัญหามาหลอก Linker ตรงนี้แทนเพื่อไม่ให้บ่นตอนหาไฟล์ไม่เจอ
-F1X3R_LDFLAGS += -Xlinker -weak_framework -Xlinker BackBoardServices -Xlinker -weak_framework -Xlinker GraphicsServices
-F1X3R_PRIVATE_FRAMEWORKS += IOKit SpringBoardServices
+# เอา Private Framework ทุกตัวที่เคยมีปัญหามาย้ายใส่ตรงนี้ทั้งหมด (รวม SpringBoardServices และ IOKit ด้วย)
+F1X3R_LDFLAGS += -Xlinker -weak_framework -Xlinker BackBoardServices -Xlinker -weak_framework -Xlinker GraphicsServices -Xlinker -weak_framework -Xlinker SpringBoardServices -Xlinker -weak_framework -Xlinker IOKit
+
+# ลบการเรียกแบบปกติออกไปเลย เพื่อไม่ให้ Linker สั่งหยุดทำงานตอนคอมไพล์
+F1X3R_PRIVATE_FRAMEWORKS = 
 
 ifeq ($(TARGET_CODESIGN),ldid)
 F1X3R_CODESIGN_FLAGS += -Sent.plist
