@@ -1167,16 +1167,33 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
 
 
 - (void)updateOrientation:(UIInterfaceOrientation)orientation animateWithDuration:(NSTimeInterval)duration {
-    // ปล่อยให้เปลี่ยนไปตามค่าที่ระบบส่งมาจริง ไม่ต้องบังคับเป็น LandscapeRight
-    if (orientation == _orientation)
+    // Always treat the HUD as landscape: if the system reports a
+    // portrait orientation, normalize it to LandscapeRight so that
+    // our HUD content and ImGui menu are laid out on a horizontal canvas.
+    UIInterfaceOrientation appliedOrientation;
+    if (UIInterfaceOrientationIsLandscape(orientation)) {
+        appliedOrientation = orientation;
+    } else {
+        appliedOrientation = UIInterfaceOrientationLandscapeRight;
+    }
+
+    if (appliedOrientation == _orientation)
         return;
 
-    _orientation = orientation;
+    _orientation = appliedOrientation;
 
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    // ปล่อยให้ฟังก์ชันคำนวณสลับ Width/Height ตามทิศทางจริง
-    CGRect orientedBounds = orientationBounds(orientation, screenBounds);
+    CGRect orientedBounds = orientationBounds(appliedOrientation, screenBounds);
 
+    NSLog(@"andrdevv [HUDRootViewController updateOrientation] reported=%ld applied=%ld screenBounds=%@ orientedBounds=%@",
+          (long)orientation,
+          (long)appliedOrientation,
+          NSStringFromCGRect(screenBounds),
+          NSStringFromCGRect(orientedBounds));
+
+    // Expand the HUD window itself to match the oriented bounds so that
+    // hit-testing covers the full visible area (avoids a portrait-shaped
+    // hitbox with a rotated landscape view inside).
     UIWindow *window = self.view.window;
     if (window) {
         window.frame = orientedBounds;
@@ -1185,10 +1202,19 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     self.view.bounds = orientedBounds;
     _contentView.bounds = orientedBounds;
 
-    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(orientation));
+    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(appliedOrientation));
 
     [UIView animateWithDuration:duration animations:^{
         self->_contentView.transform = transform;
+    } completion:^(BOOL finished) {
+        // บังคับให้ menuView และ ImGui ปรับขนาด Layout และจัดตำแหน่งเซ็นเตอร์ใหม่ให้ตรงกับแนวจอปัจจุบัน
+        [self->menuView setNeedsLayout];
+        [self->menuView layoutIfNeeded];
+        
+        // จัดการปรับไซส์เฟรมของ Layer เส้น ESP ให้เต็มหน้าจอแนวนอนด้วย
+        if (self->_fakeESPLayer) {
+            self->_fakeESPLayer.frame = orientedBounds;
+        }
     }];
 }
 
@@ -1209,16 +1235,13 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     _contentView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:_contentView];
 
-
     [NSLayoutConstraint activateConstraints:@[
         [_contentView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [_contentView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        
         [_contentView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [_contentView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
     ]];
     
-
     _blurView = [[UIView alloc] init];
     _contentView.backgroundColor = [UIColor clearColor];
     _blurView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -1234,15 +1257,13 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
         [_blurView.trailingAnchor constraintEqualToAnchor:_contentView.trailingAnchor]
     ]];
     
-    CGRect screenBounds = [[UIScreen mainScreen] bounds];
-    // Жёсткий размер контейнера меню под ImGui: 300x200 (горизонтальный прямоугольник).
-    CGRect menuFrame = CGRectMake(0, 20, 300, 200);
-    CGFloat centerX = CGRectGetMidX(screenBounds) - menuFrame.size.width / 2;
-    menuFrame.origin.x = centerX;
-
-    // Small draggable menu container; only this rect hosts ImGui view.
-    menuView = [[MenuView alloc] initWithFrame:menuFrame];
-    [self.view addSubview:menuView];
+    // ตั้งขนาดเริ่มต้นเป็นสี่เหลี่ยมแนวนอน (300x200) ไว้ลอย ๆ ไม่ต้องคำนวณ X ตายตัว
+    // เพราะเดี๋ยวตอนรัน คำสั่ง centerMenu ใน MenuView จะดันตัวมันไปอยู่ตรงกลางให้เองครับ
+    menuView = [[MenuView alloc] initWithFrame:CGRectMake(0, 0, 300, 200)];
+    
+    // แก้ไข: แอดลงใน _blurView (ซึ่งอยู่ภายใน _contentView ที่ถูกหมุนองศา) 
+    // แทนการแอดลง self.view ตรง ๆ เพื่อให้ตัวเมนูหมุนเอียงตามหน้าจออัตโนมัติ
+    [_blurView addSubview:menuView];
 
     NSLog(@"andrdevv [HUDRootViewController viewDidLoad] self.view=%p bounds=%@ _contentView.frame=%@ _blurView.frame=%@ menuView=%p frame=%@ superview=%p",
           self.view,
@@ -1253,7 +1274,6 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
           NSStringFromCGRect(menuView.frame),
           menuView.superview);
 
-    
     _speedLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     [_blurView addSubview:_speedLabel];
     //Remade by andrdev
@@ -1276,7 +1296,7 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     _fakeESPLayer.fillColor = [UIColor clearColor].CGColor;
     _fakeESPLayer.strokeColor = [UIColor colorWithRed:0.0f green:1.0f blue:0.0f alpha:1.0f].CGColor;
     _fakeESPLayer.lineWidth = 2.0;
-    [self.view.layer insertSublayer:_fakeESPLayer below:menuView.layer];
+    [_blurView.layer insertSublayer:_fakeESPLayer below:menuView.layer];
 
     // Draggable launcher button to show the menu when it is hidden.
     _menuToggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -1289,7 +1309,7 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     [_menuToggleButton addTarget:self action:@selector(menuToggleButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
     UIPanGestureRecognizer *btnPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuButtonPan:)];
     [_menuToggleButton addGestureRecognizer:btnPan];
-    [self.view addSubview:_menuToggleButton];
+    [_blurView addSubview:_menuToggleButton]; // ย้ายปุ่ม Open เข้ามาอยู่ในโครงสร้างที่หมุนตามจอด้วยกัน
 
     // Start with menu hidden and launcher button visible.
     _menuVisible = NO;
@@ -1299,6 +1319,7 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
 
     [self reloadUserDefaults];
 }
+
 
 - (void)viewDidLayoutSubviews
 {
