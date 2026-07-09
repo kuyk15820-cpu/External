@@ -31,7 +31,7 @@ F1X3R_CCFLAGS += -DNOTIFY_RELOAD_APP=\"ch.xxtou.notification.app.reload\"
 F1X3R_CCFLAGS += -std=c++17
 MainApplication.mm_CCFLAGS += -std=c++14
 F1X3R_FRAMEWORKS += CoreGraphics QuartzCore UIKit Foundation Metal MetalKit
-F1X3R_PRIVATE_FRAMEWORKS += BackBoardServices GraphicsServices IOKit SpringBoardServices
+F1X3R_PRIVATE_FRAMEWORKS += IOKit SpringBoardServices
 
 
 ifeq ($(TARGET_CODESIGN),ldid)
