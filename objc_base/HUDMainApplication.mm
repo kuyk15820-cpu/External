@@ -875,9 +875,9 @@ static void DumpThreads(void)
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
-    // Force HUD to operate in landscape only (match HUDimgui behavior).
-    return UIInterfaceOrientationMaskLandscape;
+    return UIInterfaceOrientationMaskAll;
 }
+
 
 - (BOOL)shouldAutorotate
 {
@@ -1176,33 +1176,16 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
 
 
 - (void)updateOrientation:(UIInterfaceOrientation)orientation animateWithDuration:(NSTimeInterval)duration {
-    // Always treat the HUD as landscape: if the system reports a
-    // portrait orientation, normalize it to LandscapeRight so that
-    // our HUD content and ImGui menu are laid out on a horizontal canvas.
-    UIInterfaceOrientation appliedOrientation;
-    if (UIInterfaceOrientationIsLandscape(orientation)) {
-        appliedOrientation = orientation;
-    } else {
-        appliedOrientation = UIInterfaceOrientationLandscapeRight;
-    }
-
-    if (appliedOrientation == _orientation)
+    // ปล่อยให้เปลี่ยนไปตามค่าที่ระบบส่งมาจริง ไม่ต้องบังคับเป็น LandscapeRight
+    if (orientation == _orientation)
         return;
 
-    _orientation = appliedOrientation;
+    _orientation = orientation;
 
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    CGRect orientedBounds = orientationBounds(appliedOrientation, screenBounds);
+    // ปล่อยให้ฟังก์ชันคำนวณสลับ Width/Height ตามทิศทางจริง
+    CGRect orientedBounds = orientationBounds(orientation, screenBounds);
 
-    NSLog(@"andrdevv [HUDRootViewController updateOrientation] reported=%ld applied=%ld screenBounds=%@ orientedBounds=%@",
-          (long)orientation,
-          (long)appliedOrientation,
-          NSStringFromCGRect(screenBounds),
-          NSStringFromCGRect(orientedBounds));
-
-    // Expand the HUD window itself to match the oriented bounds so that
-    // hit-testing covers the full visible area (avoids a portrait-shaped
-    // hitbox with a rotated landscape view inside).
     UIWindow *window = self.view.window;
     if (window) {
         window.frame = orientedBounds;
@@ -1211,13 +1194,13 @@ static inline CGRect orientationBounds(UIInterfaceOrientation orientation, CGRec
     self.view.bounds = orientedBounds;
     _contentView.bounds = orientedBounds;
 
-    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(appliedOrientation));
+    CGAffineTransform transform = CGAffineTransformMakeRotation(orientationAngle(orientation));
 
     [UIView animateWithDuration:duration animations:^{
         self->_contentView.transform = transform;
     }];
-
 }
+
 
 
 
