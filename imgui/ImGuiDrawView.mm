@@ -218,7 +218,7 @@ static bool MenDeal = true;
                 // and ImGui does not change MenDeal internally.
                 ImGui::Begin("MGZ (CN) - F1X3R", nullptr);
                 
-                ImGui::TableNextColumn();
+               // ImGui::TableNextColumn();
                 ImGui::Checkbox("Draw Esp", &espEnabled);
                 HUDSetESPEnabled(espEnabled);
 
