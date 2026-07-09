@@ -17,7 +17,10 @@ F1X3R_FILES += $(wildcard cheat/*.mm cheat/*.m)
 F1X3R_FILES += imgui/ImGuiDrawView.mm
 F1X3R_FILES += $(wildcard imgui/IMGUI/*.cpp)
 F1X3R_FILES += $(wildcard imgui/IMGUI/*.mm)
-F1X3R_CFLAGS += -fobjc-arc -Wno-unused-function -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-value -Wno-module-import-in-extern-c -Wno-mismatched-return-types
+
+# เพิ่มการข้าม Error เรื่อง nontrivial-memcall ตรงนี้ เพื่อให้คอมไพล์ ImGui ผ่านครับ
+F1X3R_CFLAGS += -fobjc-arc -Wno-unused-function -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-value -Wno-module-import-in-extern-c -Wno-mismatched-return-types -Wno-error=nontrivial-memcall -Wno-nontrivial-memcall
+
 F1X3R_CFLAGS += -Iinclude
 F1X3R_CFLAGS += -Iimgui
 F1X3R_CFLAGS += -include hud-prefix.pch
