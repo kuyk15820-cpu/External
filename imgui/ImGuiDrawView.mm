@@ -172,81 +172,110 @@ static bool MenDeal = true;
     
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     
-
-//Define your bool/function in here
+    // ----------------------------------------------------
+    // ตัวแปรฟังก์ชันเดิม
+    // ----------------------------------------------------
     static bool espEnabled = false;
     static bool overlayEnabled = true;
-
-//Define active function
     static bool show_s0_active = false;
     
+    // ----------------------------------------------------
+    // เพิ่มตัวแปร Demo สำหรับ Checkbox และ Slider
+    // ----------------------------------------------------
+    static bool demo_checkbox1 = false;
+    static bool demo_checkbox2 = false;
+    static bool demo_checkbox3 = false;
+    static bool demo_checkbox4 = false;
+    
+    static float demo_slider_float1 = 0.0f;
+    static float demo_slider_float2 = 100.0f;
+    static int demo_slider_int1 = 0;
+    static int demo_slider_int2 = 10;
         
-        if (MenDeal == true) {
-            [self.view setUserInteractionEnabled:YES];
-        } else if (MenDeal == false) {
-            [self.view setUserInteractionEnabled:NO];
-        }
+    if (MenDeal == true) {
+        [self.view setUserInteractionEnabled:YES];
+    } else if (MenDeal == false) {
+        [self.view setUserInteractionEnabled:NO];
+    }
 
-        MTLRenderPassDescriptor* renderPassDescriptor = view.currentRenderPassDescriptor;
-        if (renderPassDescriptor != nil)
+    MTLRenderPassDescriptor* renderPassDescriptor = view.currentRenderPassDescriptor;
+    if (renderPassDescriptor != nil)
+    {
+        id <MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+        [renderEncoder pushDebugGroup:@"ImGui Jane"];
+
+        ImGui_ImplMetal_NewFrame(renderPassDescriptor);
+        ImGui::NewFrame();
+        
+
+        ImFont* font = ImGui::GetFont();
+        font->Scale = 15.f / font->FontSize;
+
+        // ปรับขนาดหน้าต่างเริ่มต้นให้ยาวขึ้นเพื่อรองรับฟังชั่นที่เพิ่มเข้ามาเยอะๆ
+        float windowW = 400.0f;
+        float windowH = 260.0f;
+
+        if (windowW > io.DisplaySize.x) windowW = io.DisplaySize.x;
+        if (windowH > io.DisplaySize.y) windowH = io.DisplaySize.y;
+
+        float x = (io.DisplaySize.x - windowW) * 0.5f;
+        float y = (io.DisplaySize.y - windowH) * 0.5f;
+
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(windowW, windowH), ImGuiCond_Always);
+        
+        if (MenDeal == true)
         {
-            id <MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-            [renderEncoder pushDebugGroup:@"ImGui Jane"];
-
-            ImGui_ImplMetal_NewFrame(renderPassDescriptor);
-            ImGui::NewFrame();
+            // 1. ส่ง &MenDeal เพื่อให้ปุ่ม X กลับมาแสดง
+            // 2. ใส่ Flag ImGuiWindowFlags_NoResize เพื่อปิดการลากขยายขนาดเมนู
+            ImGui::Begin("MGZ Lite (1.2.9CN) - F1X3R", &MenDeal, ImGuiWindowFlags_NoResize);
             
+            // ฟังก์ชันเดิมของคุณ
+            /*ImGui::Checkbox("Draw Esp", &espEnabled);
+            HUDSetESPEnabled(espEnabled);
 
-            ImFont* font = ImGui::GetFont();
-            font->Scale = 15.f / font->FontSize;
+            ImGui::Separator();*/ // เส้นคั่นแบ่งโซนให้ดูสวยงาม            
+            // เพิ่ม Checkbox Demo อีกเยอะๆตามคำขอ
+            ImGui::Checkbox("No Skill CD", &demo_checkbox1);
+            ImGui::Checkbox("Speed Attack", &demo_checkbox2);
+            ImGui::Checkbox("Speed Hack", &demo_checkbox3);
+            ImGui::Checkbox("Teleport to Item (Beta)", &demo_checkbox4);
 
-            float windowW = 300.0f;
-            float windowH = 200.0f;
+ImGui::Checkbox("Monster Not Attack", &demo_checkbox3);
 
-            if (windowW > io.DisplaySize.x) windowW = io.DisplaySize.x;
-            if (windowH > io.DisplaySize.y) windowH = io.DisplaySize.y;
+            /*ImGui::Separator();
+            ImGui::Text("--- Demo Sliders ---");*/
 
-            float x = (io.DisplaySize.x - windowW) * 0.5f;
-            float y = (io.DisplaySize.y - windowH) * 0.5f;
+            // เพิ่ม Slider Demo สำหรับค่าทศนิยม (Float) และจำนวนเต็ม (Int)
+            /*ImGui::SliderFloat("Fly High", &demo_slider_float1, 0.0f, 24.0f, "%.1f");
+            ImGui::SliderFloat("Fly Speed", &demo_slider_float2, 1.0f, 7.0f, "%.1f");
+            ImGui::SliderInt("Max Distance", &demo_slider_int1, 0, 500);
+            ImGui::SliderInt("Line Thickness", &demo_slider_int2, 1, 10);*/
 
-            ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
-            ImGui::SetNextWindowSize(ImVec2(windowW, windowH), ImGuiCond_Always);
+            // [ลบปุ่ม Hide Menu เดิมออกเรียบร้อยแล้ว]
+
+            ImGui::End();
             
-            if (MenDeal == true)
-            {
-                // Do not pass a bool* here so the close (X) button is hidden
-                // and ImGui does not change MenDeal internally.
-                ImGui::Begin("MGZ (CN) - F1X3R", nullptr);
-                
-               // ImGui::TableNextColumn();
-                ImGui::Checkbox("Draw Esp", &espEnabled);
-                HUDSetESPEnabled(espEnabled);
-
-                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                if (ImGui::Button("Hide Menu", ImVec2(-FLT_MIN, 0.0f)))
-                {
-                    MenDeal = false;
-                    HUDHideMenu();
-                }
-
-                ImGui::End();
-                
+            // เช็คเพิ่ม: ถ้าผู้ใช้กดปุ่ม X บนเมนู (ทำให้ MenDeal กลายเป็น false) ให้เรียกซ่อน HUD ด้วย
+            if (!MenDeal) {
+                HUDHideMenu();
             }
-
-            ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-            (void)draw_list;
-
-            ImGui::Render();
-            ImDrawData* draw_data = ImGui::GetDrawData();
-            ImGui_ImplMetal_RenderDrawData(draw_data, commandBuffer, renderEncoder);
-          
-            [renderEncoder popDebugGroup];
-            [renderEncoder endEncoding];
-
-            [commandBuffer presentDrawable:view.currentDrawable];
         }
 
-        [commandBuffer commit];
+        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+        (void)draw_list;
+
+        ImGui::Render();
+        ImDrawData* draw_data = ImGui::GetDrawData();
+        ImGui_ImplMetal_RenderDrawData(draw_data, commandBuffer, renderEncoder);
+      
+        [renderEncoder popDebugGroup];
+        [renderEncoder endEncoding];
+
+        [commandBuffer presentDrawable:view.currentDrawable];
+    }
+
+    [commandBuffer commit];
 }
 
 - (void)mtkView:(MTKView*)view drawableSizeWillChange:(CGSize)size
